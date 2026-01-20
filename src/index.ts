@@ -1,10 +1,18 @@
 import express, { Application, Request, Response } from "express";
 import bodyParser from "body-parser";
+import cors from "cors";
 import { connectToDB } from "./database/mongodb";
 import { PORT } from "./config";
 import authRoutes from "./routes/auth.route";
 
 const app: Application = express();
+
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+    credentials: true,
+  })
+);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
