@@ -1,4 +1,5 @@
 import { UserModel, IUser } from "../models/user.model";
+import { UserType } from "../types/user.type";
 
 export interface IUserRepository {
   findByEmail(email: string): Promise<IUser | null>;
@@ -19,7 +20,7 @@ export class UserRepository implements IUserRepository {
     return await UserModel.findOne({ username });
   }
 
-  async create(userData: Partial<IUser>): Promise<IUser> {
+  async create(userData: Partial<UserType>): Promise<IUser> {
     const user = new UserModel(userData);
     return await user.save();
   }
@@ -32,7 +33,7 @@ export class UserRepository implements IUserRepository {
     return await UserModel.find();
   }
 
-  async update(id: string, data: Partial<IUser>): Promise<IUser | null> {
+  async update(id: string, data: Partial<UserType>): Promise<IUser | null> {
     return await UserModel.findByIdAndUpdate(id, data, { new: true });
   }
 
