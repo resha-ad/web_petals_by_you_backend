@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 export const UserSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -7,6 +7,7 @@ export const UserSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   role: z.enum(["user", "admin"]).default("user"),
+  imageUrl: z.string().optional().nullable(),
 });
 
 export type UserType = z.infer<typeof UserSchema>;

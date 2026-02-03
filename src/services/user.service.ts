@@ -4,6 +4,8 @@ import { CreateUserDTO, LoginUserDTO } from "../dtos/user.dto";
 import { UserRepository } from "../repositories/user.repository";
 import { HttpError } from "../errors/http-error";
 import { JWT_SECRET } from "../config";
+import { UserType } from "../types/user.type";
+import { IUser } from "../models/user.model";
 
 const userRepo = new UserRepository();
 
@@ -59,5 +61,28 @@ export class UserService {
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "30d" });
 
     return { token, user };
+  }
+
+  async updateUser(userId: string, data: Partial<UserType>): Promise<IUser> {
+    const user = await userRepo.findById(userId);
+    if (!user) throw new HttpError(404, "User not found");
+
+    // Prevent changing to existing email/username (if provided)
+    if (data.email && data.email !== user.email) {
+      const emailExists = await userRepo.findByEmail(data.email);
+      if (emailExists) throw new HttpError(409, "Email already in use");
+    }
+
+    if (data.username && data.username !== user.username) {
+      const usernameExists = await userRepo.findByUsername(data.username);
+      if (usernameExists) throw new HttpError(409, "Username already taken");
+    }
+
+    // Password already hashed if provided
+
+    const updatedUser = await userRepo.update(userId, data);
+    if (!updatedUser) throw new HttpError(500, "Update failed");
+
+    return updatedUser;
   }
 }
