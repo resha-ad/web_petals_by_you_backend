@@ -1,25 +1,26 @@
-import express, { Application, Request, Response } from "express";
-import bodyParser from "body-parser";
+import express from "express";
 import cors from "cors";
+import bodyParser from "body-parser";
+import path from "path";
 import { connectToDB } from "./database/mongodb";
 import { PORT } from "./config";
 import authRoutes from "./routes/auth.route";
+import adminUserRoutes from "./routes/admin/user.route";  // ← new
 
-const app: Application = express();
+const app = express();
 
-app.use(
-  cors({
-    origin: ["http://localhost:3000"],
-    credentials: true,
-  })
-);
-
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use("/api/auth", authRoutes);
+// Serve uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-app.get("/", (req: Request, res: Response) => {
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/admin/users", adminUserRoutes);   // ← new
+
+app.get("/", (req, res) => {
   res.json({ success: true, message: "API is running!" });
 });
 
