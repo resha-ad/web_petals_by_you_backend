@@ -9,6 +9,8 @@ export interface IUser extends Document {
   lastName?: string;
   role: "user" | "admin";
   imageUrl?: string | null;
+  resetPasswordToken?: string | null;
+  resetPasswordExpires?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   _id: mongoose.Types.ObjectId;
@@ -28,6 +30,8 @@ const userSchema = new Schema<IUser>(
       default: "user",
     },
     imageUrl: { type: String, default: null },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
   },
   { timestamps: true }
 );
