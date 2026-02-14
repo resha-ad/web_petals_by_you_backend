@@ -33,6 +33,32 @@ export class UserRepository implements IUserRepository {
     return await UserModel.find();
   }
 
+  async findAllPaginated(
+    page: number = 1,
+    limit: number = 10,
+    search?: string
+  ): Promise<{ users: IUser[]; total: number }> {
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { username: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      UserModel.find(query)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
+      UserModel.countDocuments(query),
+    ]);
+
+    return { users, total };
+  }
+
   async update(id: string, data: Partial<UserType>): Promise<IUser | null> {
     return await UserModel.findByIdAndUpdate(id, data, { new: true });
   }

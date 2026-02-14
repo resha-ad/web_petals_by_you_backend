@@ -104,15 +104,25 @@ export class AuthController {
     }
   }
 
-  // Add this method to AuthController class
   async whoAmI(req: AuthenticatedRequest, res: Response) {
     try {
-      if (!req.user) {
+      if (!req.user?.id) {
         return res.status(401).json({ success: false, message: "Not authenticated" });
       }
-      res.status(200).json({ success: true, data: req.user });
+
+      // Fetch full user document (includes imageUrl, createdAt, etc.)
+      const fullUser = await userService.getUserById(req.user.id);
+
+      return res.status(200).json({
+        success: true,
+        data: fullUser,
+        message: "User profile fetched successfully"
+      });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: "Server error" });
+      res.status(err.statusCode || 500).json({
+        success: false,
+        message: err.message || "Server error"
+      });
     }
   }
 }

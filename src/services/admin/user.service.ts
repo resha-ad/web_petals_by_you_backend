@@ -28,8 +28,19 @@ export class AdminUserService {
         return user;
     }
 
-    async getAllUsers(): Promise<IUser[]> {
-        return await repo.findAll();
+    async getAllUsers(page = 1, limit = 10, search?: string) {
+        const { users, total } = await repo.findAllPaginated(page, limit, search);
+        const totalPages = Math.ceil(total / limit);
+
+        return {
+            users,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+            },
+        };
     }
 
     async getUserById(id: string): Promise<IUser> {

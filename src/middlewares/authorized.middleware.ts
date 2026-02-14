@@ -14,6 +14,7 @@ export interface AuthenticatedRequest extends Request {
         firstName?: string;
         lastName?: string;
         role: "user" | "admin";
+        imageUrl?: string | null;
     };
 }
 
@@ -39,6 +40,7 @@ export const protect = async (req: AuthenticatedRequest, res: Response, next: Ne
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
+            imageUrl: user.imageUrl,
         };
 
         next();
