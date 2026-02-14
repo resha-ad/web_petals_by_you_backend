@@ -50,18 +50,25 @@ export class AdminUserController {
             });
         }
     }
-    async getAllUsers(_req: Request, res: Response) {
+    async getAllUsers(req: Request, res: Response) {
         try {
-            const users = await service.getAllUsers();
+            const page = Number(req.query.page) || 1;
+            const size = Number(req.query.size) || 10;
+            const search = req.query.search as string | undefined;
+
+            const result = await service.getAllUsers(page, size, search);
+
             return res.status(200).json({
                 success: true,
-                data: users,
+                data: result.users,
+                pagination: result.pagination,
+                message: "Users retrieved",
             });
         } catch (err: any) {
             const status = err instanceof HttpError ? err.statusCode : 500;
             return res.status(status).json({
                 success: false,
-                message: err.message || "Failed to fetch users",
+                message: err.message || "Failed to retrieve users",
             });
         }
     }
