@@ -32,3 +32,5 @@ const startApp = async () => {
 };
 
 startApp();
+
+export { app };
