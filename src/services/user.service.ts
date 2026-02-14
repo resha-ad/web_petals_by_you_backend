@@ -1,15 +1,23 @@
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { sendResetPasswordEmail } from '../config/email';
 import { CreateUserDTO, LoginUserDTO } from "../dtos/user.dto";
 import { UserRepository } from "../repositories/user.repository";
 import { HttpError } from "../errors/http-error";
 import { JWT_SECRET } from "../config";
+import crypto from 'crypto';
 import { UserType } from "../types/user.type";
-import { IUser } from "../models/user.model";
+import { IUser, UserModel } from "../models/user.model";
 
 const userRepo = new UserRepository();
 
 export class UserService {
+  static resetPassword(token: any, newPassword: any) {
+    throw new Error("Method not implemented.");
+  }
+  static forgotPassword(email: any) {
+    throw new Error("Method not implemented.");
+  }
   async registerUser(input: CreateUserDTO) {
     // Check for existing email
     const existingEmail = await userRepo.findByEmail(input.email);
@@ -85,4 +93,51 @@ export class UserService {
 
     return updatedUser;
   }
+
+  async forgotPassword(email: string) {
+    const user = await userRepo.findByEmail(email);
+    if (!user) {
+      // Security: don't reveal if email exists
+      return { message: "If the email exists, a reset link has been sent." };
+    }
+
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save();
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    await sendResetPasswordEmail(user.email, resetUrl);
+
+    return { message: "If the email exists, a reset link has been sent." };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await UserModel.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      throw new HttpError(400, "Invalid or expired reset token");
+    }
+
+    user.password = await bcryptjs.hash(newPassword, 12);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    return { message: "Password reset successful" };
+  }
+  async getUserById(id: string): Promise<IUser> {
+    const user = await userRepo.findById(id);
+    if (!user) throw new HttpError(404, "User not found");
+    return user;
+  }
+
 }
