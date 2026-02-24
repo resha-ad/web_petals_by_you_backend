@@ -5,7 +5,8 @@ import path from "path";
 import { connectToDB } from "./database/mongodb";
 import { PORT } from "./config";
 import authRoutes from "./routes/auth.route";
-import adminUserRoutes from "./routes/admin/user.route";  // ← new
+import adminUserRoutes from "./routes/admin/user.route";
+import itemRoutes from "./routes/item.route";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin/users", adminUserRoutes);   // ← new
+app.use("/api/items", itemRoutes);
 
 app.get("/", (req, res) => {
   res.json({ success: true, message: "API is running!" });
