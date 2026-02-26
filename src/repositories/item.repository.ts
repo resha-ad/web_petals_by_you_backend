@@ -15,7 +15,7 @@ export interface ItemQueryParams {
 
 export interface IItemRepository {
     create(item: Partial<IItem>): Promise<IItem>;
-    findById(id: string): Promise<IItem | null>;
+    findByIdentifier(identifier: string): Promise<IItem | null>;
     findAll(params: ItemQueryParams, isAdmin: boolean): Promise<{ items: IItem[]; total: number }>;
     update(id: string, item: Partial<ItemType>): Promise<IItem | null>;
     softDelete(id: string): Promise<boolean>;
@@ -51,11 +51,15 @@ export class ItemRepository implements IItemRepository {
         return await newItem.save();
     }
 
-    async findById(id: string): Promise<IItem | null> {
-        return await ItemModel.findOne({ _id: id, isDeleted: false }).populate(
-            'createdBy',
-            'username email'
-        );
+    // src/repositories/item.repository.ts
+    async findByIdentifier(identifier: string): Promise<IItem | null> {
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(identifier);
+        const query = isObjectId
+            ? { _id: identifier, isDeleted: false }
+            : { slug: identifier, isDeleted: false };
+
+        return await ItemModel.findOne(query)
+            .populate('createdBy', 'username email');
     }
 
     async findAll(

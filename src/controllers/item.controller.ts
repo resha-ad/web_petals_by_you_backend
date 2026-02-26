@@ -16,24 +16,20 @@ export class ItemController {
         }
     }
 
-    async getAllItems(req: Request, res: Response) {
+    async getAllItems(req: AuthenticatedRequest, res: Response) {
         try {
-            // Safe access – works even when not logged in
-            const user = (req as any).user;  // or better: use your AuthenticatedRequest type if extended properly
-            const isAdmin = user?.role === 'admin';
-
-            console.log('[getAllItems] user:', user);
-            console.log('[getAllItems] isAdmin:', isAdmin);
+            console.log("[getAllItems] Full req.user:", req.user); // ← add this
+            const isAdmin = req.user?.role === 'admin';
+            console.log("[getAllItems] isAdmin:", isAdmin);
 
             const result = await service.getAllItems(req.query, isAdmin);
-
             res.status(200).json({
                 success: true,
-                data: result.items,
-                pagination: result.pagination,
+                data: result,                    // ← change this line (was result.items)
                 message: 'Items fetched'
             });
         } catch (err: any) {
+            console.error("[getAllItems] Error:", err);
             res.status(err.statusCode || 500).json({ success: false, message: err.message });
         }
     }
