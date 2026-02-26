@@ -5,11 +5,17 @@ import path from "path";
 import { connectToDB } from "./database/mongodb";
 import { PORT } from "./config";
 import authRoutes from "./routes/auth.route";
-import adminUserRoutes from "./routes/admin/user.route";  // ← new
+import adminUserRoutes from "./routes/admin/user.route";
+import itemRoutes from "./routes/item.route";
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cookieParser());
+app.use(cors({
+  origin: "http://localhost:3000", credentials: true, methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -19,6 +25,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin/users", adminUserRoutes);   // ← new
+app.use("/api/items", itemRoutes);
 
 app.get("/", (req, res) => {
   res.json({ success: true, message: "API is running!" });
