@@ -18,14 +18,18 @@ export class ItemController {
 
     async getAllItems(req: AuthenticatedRequest, res: Response) {
         try {
-            console.log("[getAllItems] Full req.user:", req.user); // ← add this
+            console.log("[getAllItems] Full req.user:", req.user);
             const isAdmin = req.user?.role === 'admin';
             console.log("[getAllItems] isAdmin:", isAdmin);
 
             const result = await service.getAllItems(req.query, isAdmin);
+
             res.status(200).json({
                 success: true,
-                data: result,                    // ← change this line (was result.items)
+                data: {
+                    items: result.items,
+                    pagination: result.pagination //the way frontend expects
+                },
                 message: 'Items fetched'
             });
         } catch (err: any) {
