@@ -7,6 +7,7 @@ import { uploadMultipleImages } from '../middlewares/upload.middleware';
 const router = Router();
 const controller = new ItemController();
 
+router.get("/id/:id", controller.getById);
 router.get('/', optionalProtect, controller.getAllItems.bind(controller)); // bind to preserve 'this' if class method      //optional auth
 router.get('/:id', optionalProtect, controller.getSingleItem);
 
