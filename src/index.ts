@@ -7,7 +7,10 @@ import { PORT } from "./config";
 import authRoutes from "./routes/auth.route";
 import adminUserRoutes from "./routes/admin/user.route";
 import itemRoutes from "./routes/item.route";
+import customBouquetRoutes from "./routes/customBouquet.route";
+import cartRoutes from "./routes/cart.route";
 import cookieParser from 'cookie-parser';
+import favoritesRoutes from "./routes/favorites.route";
 
 const app = express();
 
@@ -24,8 +27,11 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/admin/users", adminUserRoutes);   // ← new
+app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/items", itemRoutes);
+app.use("/api/custom-bouquets", customBouquetRoutes);
+app.use("/api/favorites", favoritesRoutes);
+app.use("/api/cart", cartRoutes);
 
 app.get("/", (req, res) => {
   res.json({ success: true, message: "API is running!" });
