@@ -1,11 +1,60 @@
 // src/repositories/cart.repository.ts
 import mongoose from "mongoose";
 import { CartModel, ICart, CartItem } from "../models/cart.model";
+import { ItemModel } from "../models/item.model";
 
-const POPULATE_OPTIONS = {
-    path: "items.refId",
-    select: "name description price discountPrice flowers wrapping note recipientName totalPrice images slug",
-};
+// We can't use a single .populate() across two collections (Item + CustomBouquet)
+// without a discriminator/refPath on the model. Instead we enrich manually
+// after fetching — this is safe, explicit, and doesn't require schema changes.
+
+async function enrichCartItems(cart: any): Promise<any> {
+    if (!cart || !cart.items || cart.items.length === 0) return cart;
+
+    // Separate ids by type
+    const productIds = cart.items
+        .filter((i: any) => i.type === "product")
+        .map((i: any) => i.refId);
+
+    const customIds = cart.items
+        .filter((i: any) => i.type === "custom")
+        .map((i: any) => i.refId);
+
+    // Fetch product details
+    const products: Record<string, any> = {};
+    if (productIds.length > 0) {
+        const items = await ItemModel.find({ _id: { $in: productIds } })
+            .select("name description price discountPrice images slug stock")
+            .lean();
+        items.forEach((item: any) => {
+            products[item._id.toString()] = item;
+        });
+    }
+
+    // Fetch custom bouquet details (dynamic import avoids circular deps)
+    const customs: Record<string, any> = {};
+    if (customIds.length > 0) {
+        // Import inline so we don't have to change top-level imports
+        const { CustomBouquetModel } = await import("../models/customBouquet.model");
+        const bouquets = await CustomBouquetModel.find({ _id: { $in: customIds } })
+            .select("flowers wrapping note recipientName totalPrice")
+            .lean();
+        bouquets.forEach((b: any) => {
+            customs[b._id.toString()] = b;
+        });
+    }
+
+    // Attach enriched refDetails to each cart item
+    const enrichedItems = cart.items.map((item: any) => {
+        const id = item.refId?.toString() ?? item.refId;
+        const details = item.type === "product" ? products[id] : customs[id];
+        return {
+            ...item,
+            refDetails: details || null,
+        };
+    });
+
+    return { ...cart, items: enrichedItems };
+}
 
 export class CartRepository {
     /** Internal use only — returns Mongoose Document so .save() works */
@@ -13,11 +62,11 @@ export class CartRepository {
         return await CartModel.findOne({ userId });
     }
 
-    /** For sending to client — lean plain object with refId fully populated */
+    /** For sending to client — lean plain object with enriched refDetails */
     async findByUserId(userId: string): Promise<any | null> {
-        return await CartModel.findOne({ userId })
-            .populate(POPULATE_OPTIONS)
-            .lean();
+        const cart = await CartModel.findOne({ userId }).lean();
+        if (!cart) return null;
+        return await enrichCartItems(cart);
     }
 
     async addItem(userId: string, newItem: CartItem): Promise<any> {
@@ -28,7 +77,6 @@ export class CartRepository {
         cart.items.push(newItem);
         cart.total = cart.items.reduce((sum, item) => sum + item.subtotal, 0);
         await cart.save();
-        // Re-fetch with populate + lean for clean serialization
         return await this.findByUserId(userId);
     }
 
