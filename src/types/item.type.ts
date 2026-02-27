@@ -1,3 +1,4 @@
+// src/types/item.type.ts
 import { z } from 'zod';
 
 export const ItemSchema = z.object({
@@ -23,9 +24,24 @@ export const ItemSchema = z.object({
         .nonnegative('Preparation time must be non-negative')
         .optional(),
 
-    // ← Coerce booleans too
-    isFeatured: z.coerce.boolean().default(false),
-    isAvailable: z.coerce.boolean().default(true),
+    //Proper boolean parsing for "0"/"1" strings
+    isFeatured: z.preprocess(
+        (val) => {
+            if (val === "1" || val === 1 || val === "true") return true;
+            if (val === "0" || val === 0 || val === "false") return false;
+            return val;
+        },
+        z.boolean().default(false)
+    ),
+
+    isAvailable: z.preprocess(
+        (val) => {
+            if (val === "1" || val === 1 || val === "true") return true;
+            if (val === "0" || val === 0 || val === "false") return false;
+            return val;
+        },
+        z.boolean().default(true)
+    ),
 
     category: z.string().optional(),
     deliveryType: z.string().optional(),
