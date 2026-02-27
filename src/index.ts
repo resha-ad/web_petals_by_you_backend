@@ -11,6 +11,9 @@ import customBouquetRoutes from "./routes/customBouquet.route";
 import cartRoutes from "./routes/cart.route";
 import cookieParser from 'cookie-parser';
 import favoritesRoutes from "./routes/favorites.route";
+import orderRoutes from "./routes/order.route";
+import adminOrderRoutes from "./routes/admin/admin.order.route";
+import adminDeliveryRoutes from "./routes/admin/admin.delivery.route";
 
 const app = express();
 
@@ -32,6 +35,9 @@ app.use("/api/items", itemRoutes);
 app.use("/api/custom-bouquets", customBouquetRoutes);
 app.use("/api/favorites", favoritesRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/admin/orders", adminOrderRoutes);
+app.use("/api/admin/deliveries", adminDeliveryRoutes);
 
 app.get("/", (req, res) => {
   res.json({ success: true, message: "API is running!" });
