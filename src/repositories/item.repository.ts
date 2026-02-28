@@ -45,13 +45,12 @@ export class ItemRepository implements IItemRepository {
 
         const newItem = new ItemModel({
             ...item,
-            slug,           // ← we add it here
+            slug,
         });
 
         return await newItem.save();
     }
 
-    // src/repositories/item.repository.ts
     async findByIdentifier(identifier: string): Promise<IItem | null> {
         const isObjectId = /^[0-9a-fA-F]{24}$/.test(identifier);
         const query = isObjectId
@@ -102,9 +101,9 @@ export class ItemRepository implements IItemRepository {
             query.populate('createdBy', 'username email');
         }
 
-        // Limit fields for public users
+        // Limit fields for public users — isFeatured and stock are needed by the frontend
         if (!isAdmin) {
-            query.select('name slug description price discountPrice category images isAvailable preparationTime');
+            query.select('name slug description price discountPrice category images isAvailable isFeatured stock preparationTime');
         }
 
         const [items, total] = await Promise.all([
@@ -114,10 +113,10 @@ export class ItemRepository implements IItemRepository {
 
         return { items, total };
     }
+
     async update(id: string, item: Partial<ItemType>): Promise<IItem | null> {
         if (item.name) {
             const slug = await this.generateUniqueSlug(item.name);
-
             (item as any).slug = slug;
         }
 

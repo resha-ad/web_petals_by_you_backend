@@ -1,14 +1,15 @@
 import bcryptjs from "bcryptjs";
 import { HttpError } from "../../errors/http-error";
 import { UserRepository } from "../../repositories/user.repository";
-import { CreateUserDTO, UpdateUserDTO } from "../../dtos/user.dto";
+import { AdminCreateUserDTO, AdminUpdateUserDTO } from "../../dtos/user.dto";
 import { IUser } from "../../models/user.model";
-import { UserType } from "../../types/user.type";
 
 const repo = new UserRepository();
 
 export class AdminUserService {
-    async createUser(data: CreateUserDTO & { imageUrl?: string | null | undefined }): Promise<IUser> {
+    async createUser(
+        data: AdminCreateUserDTO & { imageUrl?: string | null }
+    ): Promise<IUser> {
         const emailExists = await repo.findByEmail(data.email);
         if (emailExists) throw new HttpError(409, "Email already in use");
 
@@ -17,29 +18,23 @@ export class AdminUserService {
 
         const hashed = await bcryptjs.hash(data.password, 12);
 
-        const userData: Partial<UserType> = {
-            ...data,
+        return await repo.create({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            username: data.username,
             password: hashed,
+            phone: data.phone ?? null,
+            role: data.role ?? "user",
             imageUrl: data.imageUrl ?? null,
-        };
-
-        const user = await repo.create(userData);
-
-        return user;
+        });
     }
 
     async getAllUsers(page = 1, limit = 10, search?: string) {
         const { users, total } = await repo.findAllPaginated(page, limit, search);
-        const totalPages = Math.ceil(total / limit);
-
         return {
             users,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages,
-            },
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
         };
     }
 
@@ -49,19 +44,25 @@ export class AdminUserService {
         return user;
     }
 
-    async updateUser(id: string, data: Partial<UserType>): Promise<IUser> {
+    async updateUser(
+        id: string,
+        data: AdminUpdateUserDTO & { imageUrl?: string | null }
+    ): Promise<IUser> {
         const user = await repo.findById(id);
         if (!user) throw new HttpError(404, "User not found");
 
-        if (data.email && data.email !== user.email) {
-            if (await repo.findByEmail(data.email)) throw new HttpError(409, "Email in use");
-        }
-        if (data.username && data.username !== user.username) {
-            if (await repo.findByUsername(data.username)) throw new HttpError(409, "Username taken");
+        // Email is permanently immutable
+        if ((data as any).email) {
+            throw new HttpError(400, "Email cannot be changed");
         }
 
-        // Now data is Partial<UserType>, which matches UpdateUserDTO perfectly
-        return (await repo.update(id, data))!;
+        // Username uniqueness check (only if changed)
+        if (data.username && data.username !== user.username) {
+            const taken = await repo.findByUsername(data.username);
+            if (taken) throw new HttpError(409, "Username already taken");
+        }
+
+        return (await repo.update(id, data as any))!;
     }
 
     async deleteUser(id: string): Promise<void> {

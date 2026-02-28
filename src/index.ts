@@ -14,6 +14,7 @@ import favoritesRoutes from "./routes/favorites.route";
 import orderRoutes from "./routes/order.route";
 import adminOrderRoutes from "./routes/admin/admin.order.route";
 import adminDeliveryRoutes from "./routes/admin/admin.delivery.route";
+import notificationRoutes from "./routes/notification.route";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/admin/deliveries", adminDeliveryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/", (req, res) => {
   res.json({ success: true, message: "API is running!" });
