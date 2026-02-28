@@ -1,12 +1,12 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
-// 1. Define the raw document interface (matches DB shape)
 export interface IUser extends Document {
   username: string;
   email: string;
   password: string;
   firstName?: string;
   lastName?: string;
+  phone?: string | null;
   role: "user" | "admin";
   imageUrl?: string | null;
   resetPasswordToken?: string | null;
@@ -16,7 +16,6 @@ export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
 }
 
-// 2. Schema definition (no Zod generic here)
 const userSchema = new Schema<IUser>(
   {
     username: { type: String, required: true, unique: true, minlength: 3 },
@@ -24,6 +23,7 @@ const userSchema = new Schema<IUser>(
     password: { type: String, required: true, minlength: 8 },
     firstName: { type: String },
     lastName: { type: String },
+    phone: { type: String, default: null },
     role: {
       type: String,
       enum: ["user", "admin"],

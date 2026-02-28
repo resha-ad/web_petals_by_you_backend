@@ -1,18 +1,13 @@
 import { Request, Response } from "express";
 import { AdminUserService } from "../../services/admin/user.service";
-import { CreateUserDTO, UpdateUserDTO, AdminCreateUserDTO } from "../../dtos/user.dto";
+import { AdminCreateUserDTO, AdminUpdateUserDTO } from "../../dtos/user.dto";
 import { AuthenticatedRequest } from "../../middlewares/authorized.middleware";
 import { HttpError } from "../../errors/http-error";
 
-// Helper to safely extract string ID from params
 const getIdFromParams = (params: Request["params"]): string => {
     const id = params.id;
-    if (Array.isArray(id)) {
-        return id[0]; // rare case, but safe
-    }
-    if (!id) {
-        throw new HttpError(400, "User ID is required");
-    }
+    if (Array.isArray(id)) return id[0];
+    if (!id) throw new HttpError(400, "User ID is required");
     return id;
 };
 
@@ -21,35 +16,34 @@ const service = new AdminUserService();
 export class AdminUserController {
     async createUser(req: AuthenticatedRequest, res: Response) {
         try {
-            // Use the extended DTO here
             const result = AdminCreateUserDTO.safeParse(req.body);
             if (!result.success) {
                 return res.status(400).json({
                     success: false,
+                    message:
+                        Object.values(result.error.flatten().fieldErrors).flat()[0] ||
+                        "Validation failed",
                     errors: result.error.flatten(),
                 });
             }
 
-            const data = result.data;  // now has imageUrl?: string | null
-
+            const data = result.data;
             if (req.file) {
-                data.imageUrl = `/uploads/${req.file.filename}`;  // ← no error now
+                (data as any).imageUrl = `/uploads/${req.file.filename}`;
             }
 
             const user = await service.createUser(data);
-            return res.status(201).json({
-                success: true,
-                message: "User created successfully",
-                data: user,
-            });
+            return res
+                .status(201)
+                .json({ success: true, message: "User created successfully", data: user });
         } catch (err: any) {
-            const status = err instanceof HttpError ? err.statusCode : 500;
-            return res.status(status).json({
+            return res.status(err instanceof HttpError ? err.statusCode : 500).json({
                 success: false,
                 message: err.message || "Failed to create user",
             });
         }
     }
+
     async getAllUsers(req: Request, res: Response) {
         try {
             const page = Number(req.query.page) || 1;
@@ -57,7 +51,6 @@ export class AdminUserController {
             const search = req.query.search as string | undefined;
 
             const result = await service.getAllUsers(page, size, search);
-
             return res.status(200).json({
                 success: true,
                 data: result.users,
@@ -65,8 +58,7 @@ export class AdminUserController {
                 message: "Users retrieved",
             });
         } catch (err: any) {
-            const status = err instanceof HttpError ? err.statusCode : 500;
-            return res.status(status).json({
+            return res.status(err instanceof HttpError ? err.statusCode : 500).json({
                 success: false,
                 message: err.message || "Failed to retrieve users",
             });
@@ -75,15 +67,10 @@ export class AdminUserController {
 
     async getUserById(req: Request, res: Response) {
         try {
-            const id = getIdFromParams(req.params);
-            const user = await service.getUserById(id);
-            return res.status(200).json({
-                success: true,
-                data: user,
-            });
+            const user = await service.getUserById(getIdFromParams(req.params));
+            return res.status(200).json({ success: true, data: user });
         } catch (err: any) {
-            const status = err instanceof HttpError ? err.statusCode : 404;
-            return res.status(status).json({
+            return res.status(err instanceof HttpError ? err.statusCode : 404).json({
                 success: false,
                 message: err.message || "User not found",
             });
@@ -92,31 +79,28 @@ export class AdminUserController {
 
     async updateUser(req: Request, res: Response) {
         try {
-            const result = UpdateUserDTO.safeParse(req.body);
+            const result = AdminUpdateUserDTO.safeParse(req.body);
             if (!result.success) {
                 return res.status(400).json({
                     success: false,
+                    message:
+                        Object.values(result.error.flatten().fieldErrors).flat()[0] ||
+                        "Validation failed",
                     errors: result.error.flatten(),
                 });
             }
 
-            const data = { ...result.data }; // shallow copy
-
+            const data: any = { ...result.data };
             if (req.file) {
                 data.imageUrl = `/uploads/${req.file.filename}`;
             }
 
-            const id = getIdFromParams(req.params);
-            const updated = await service.updateUser(id, data);
-
-            return res.status(200).json({
-                success: true,
-                message: "User updated successfully",
-                data: updated,
-            });
+            const updated = await service.updateUser(getIdFromParams(req.params), data);
+            return res
+                .status(200)
+                .json({ success: true, message: "User updated successfully", data: updated });
         } catch (err: any) {
-            const status = err instanceof HttpError ? err.statusCode : 500;
-            return res.status(status).json({
+            return res.status(err instanceof HttpError ? err.statusCode : 500).json({
                 success: false,
                 message: err.message || "Failed to update user",
             });
@@ -125,16 +109,10 @@ export class AdminUserController {
 
     async deleteUser(req: Request, res: Response) {
         try {
-            const id = getIdFromParams(req.params);
-            await service.deleteUser(id);
-
-            return res.status(200).json({
-                success: true,
-                message: "User deleted successfully",
-            });
+            await service.deleteUser(getIdFromParams(req.params));
+            return res.status(200).json({ success: true, message: "User deleted successfully" });
         } catch (err: any) {
-            const status = err instanceof HttpError ? err.statusCode : 404;
-            return res.status(status).json({
+            return res.status(err instanceof HttpError ? err.statusCode : 404).json({
                 success: false,
                 message: err.message || "User not found",
             });
