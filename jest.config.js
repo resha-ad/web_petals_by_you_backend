@@ -8,9 +8,16 @@ module.exports = {
         'src/**/*.ts',
         '!src/**/*.d.ts',
         '!src/index.ts',
-        '!src/app.ts',           // if you ever extract app
+        '!src/app.ts',
         '!src/__tests__/**',
+        '!src/database/mongodb.ts',      // infrastructure, not testable in unit context
+        '!src/config/email.ts',          // nodemailer transport, mocked everywhere
+        '!src/config/index.ts',          // env vars only
+        '!src/middlewares/upload.middleware.ts', // multer disk storage callbacks
+        '!src/types/**',             // TypeScript types, not executable code
     ],
+    coverageDirectory: 'coverage',
+    coverageReporters: ['text', 'lcov', 'html'],
     setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
     moduleNameMapper: {
         "^uuid$": "<rootDir>/src/__tests__/__mocks__/uuid.js",

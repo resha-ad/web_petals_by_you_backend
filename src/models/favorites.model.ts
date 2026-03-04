@@ -14,7 +14,8 @@ export interface IFavorites extends Document {
 
 const favoriteItemSchema = new Schema<FavoriteItem>({
     type: { type: String, enum: ["product", "custom"], required: true },
-    refId: { type: Schema.Types.ObjectId, required: true },
+    // refId: { type: Schema.Types.ObjectId, required: true },
+    refId: { type: Schema.Types.ObjectId, ref: "Item", required: true },
 });
 
 const favoritesSchema = new Schema<IFavorites>(

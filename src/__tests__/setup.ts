@@ -1,4 +1,8 @@
-// src/__tests__/setup.ts
+
+jest.mock('../config/email', () => ({
+    sendResetPasswordEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
